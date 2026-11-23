@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data, checkpoints, outputs
+font_ko_v2/
+font_ko_*/
+*.zip
+*.npy
+*.npz
+*.pt
+*.tar.gz
+runs/
+logs/
+
+# Misc
+.ipynb_checkpoints/
+.DS_Store
+.env

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>손글씨 실시간 생성</title>
+<style>
+  :root {
+    --bg: #f3f1ec; --panel: #ffffff; --line: #e2dfd8; --text: #1d1c1a; --muted: #6b6862;
+    --accent: #2a78d6; --paper: #fdfbf6; --rule: #d6e2ee; --margin: #f1b8b0;
+    --ink: #1b2a4a; --s: 1.5;
+    --ui: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--ui); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 20px 40px; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .chip { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--line);
+          background: var(--panel); border-radius: 999px; padding: 3px 10px; margin-right: 6px; }
+  .speed { text-align: right; min-width: 210px; }
+  .speed b { font-size: 34px; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .speed b small { font-size: 15px; font-weight: 600; color: var(--muted); margin-left: 3px; }
+  .speed div { font-size: 12px; color: var(--muted); }
+
+  textarea { width: 100%; margin-top: 16px; font: 500 22px/1.45 var(--ui); padding: 14px 16px; resize: vertical;
+             border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text);
+             outline: none; min-height: 64px; }
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(42,120,214,.15); }
+
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 12px 0 16px; font-size: 14px; }
+  .bar label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+  select, input[type=number] { font: 14px var(--ui); padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px;
+           background: var(--panel); color: var(--text); }
+  select { max-width: 260px; }
+  input[type=number] { width: 64px; }
+  button { font: 600 14px var(--ui); padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line);
+           background: var(--panel); color: var(--text); cursor: pointer; }
+  button:hover { border-color: #bdb9b0; }
+  button.on { background: var(--text); color: #fff; border-color: var(--text); }
+  .sw { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line);
+        padding: 0; cursor: pointer; }
+  .sw.on { box-shadow: 0 0 0 2px var(--text); }
+  .sep { width: 1px; height: 22px; background: var(--line); }
+  .hide { display: none !important; }
+
+  .sheet { position: relative; background-color: var(--paper); border-radius: 6px; margin-bottom: 14px;
+           box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 6px 24px rgba(0,0,0,.05);
+           padding: calc(14px + 4px) 28px 22px 64px; min-height: calc(var(--lh) * 2 + 40px);
+           background-image:
+             linear-gradient(to right, transparent 47px, var(--margin) 47px, var(--margin) 48px, transparent 48px),
+             repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--lh) - 1px),
+                                       var(--rule) calc(var(--lh) - 1px), var(--rule) var(--lh));
+           background-position: 0 0, 0 18px; }
+  .sheet .who { position: absolute; top: 4px; left: 64px; font-size: 11px; color: var(--muted); }
+  .text { display: flex; flex-wrap: wrap; align-items: flex-end; }
+  .word { display: inline-flex; align-items: flex-end; height: var(--lh); }
+  .g { display: inline-block; height: calc(64px * var(--s)); background: var(--ink);
+       -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+  .g.new { animation: write .22s ease-out both; }
+  .gw { position: relative; display: inline-flex; }                 /* 글자 + 아래 생성 시간 */
+  .lat { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: calc(1.5px * var(--s));
+         font: 500 calc(7.4px * var(--s))/1 ui-monospace, "SF Mono", Menlo, monospace; color: #8b8676; white-space: nowrap;
+         font-variant-numeric: tabular-nums; pointer-events: none; }
+  body.showlat .lat { display: block; }
+  body.showlat .word { padding-bottom: calc(10.5px * var(--s)); box-sizing: border-box; }   /* 글자 크기에 맞춰 같이 줄고 늚 */
+  @keyframes write { from { clip-path: inset(0 100% 0 0); opacity: .4; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+  .sp { display: inline-block; height: var(--lh); }
+  .br { flex-basis: 100%; height: 0; }                 /* 줄바꿈: 다음 글자를 새 줄로 */
+  .br.blank { height: var(--lh); }                     /* 빈 줄 (엔터 두 번) */
+  .u { display: inline-flex; align-items: center; justify-content: center; height: calc(54px * var(--s));
+       margin: 0 calc(3px * var(--s)) calc(5px * var(--s)); padding: 0 6px; border: 1.5px dashed #cfcac0;
+       border-radius: 6px; color: #a8a398; font-size: calc(22px * var(--s)); }
+  .j { display: inline-flex; align-items: center; height: calc(54px * var(--s)); margin: 0 calc(3px * var(--s)) calc(5px * var(--s));
+       color: var(--ink); opacity: .28; font-size: calc(44px * var(--s)); animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .12; } }
+  .caret { display: inline-block; width: 2px; height: calc(48px * var(--s)); margin: 0 0 calc(7px * var(--s)) 2px;
+           background: var(--accent); animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .busy .caret { background: #eb6834; }
+
+  .foot { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .err { color: #c0392b; font-size: 13px; margin: 8px 0; }
+  body.full .wrap { max-width: none; }
+  body.full header, body.full .foot { display: none; }
+  @media (max-width: 640px) { .sheet { padding-left: 24px; background-position: -40px 0, 0 18px; } .speed { text-align: left; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>손글씨 실시간 생성</h1>
+      <span class="chip" id="mchip">모델 불러오는 중…</span><span class="chip" id="dchip"></span>
+    </div>
+    <div class="speed">
+      <b id="ms">–<small>ms</small></b>
+      <div id="msinfo">글자를 입력하면 바로 생성합니다</div>
+    </div>
+  </header>
+
+  <textarea id="txt" rows="2" spellcheck="false" placeholder="여기에 타자를 치세요. 예) 오늘 날씨가 정말 좋네요!">안녕하세요, 반가워요! 오늘 날씨가 정말 좋네요 :)</textarea>
+
+  <div class="bar">
+    <label>필체 <select id="style"></select></label>
+    <button id="nextStyle" title="다른 필체 (Alt+→)">다른 필체 ↻</button>
+    <button id="reseed" title="같은 필체, 다른 노이즈 (Alt+↓)">다시 쓰기</button>
+    <button id="multi" title="같은 문장을 필체 4개로">필체 4개 나란히</button>
+    <span class="sep"></span>
+    <label>잉크 <span id="inks"></span></label>
+    <label>크기 <input id="size" type="range" min="0.8" max="2.6" step="0.1" value="1.5"></label>
+    <span class="sep cfg"></span>
+    <label class="cfg">스텝 <input id="steps" type="number" min="1" max="1000" value="10"></label>
+    <label class="cfg">w <input id="w" type="number" min="0" max="10" step="0.5" value="1.5"></label>
+    <span class="sep"></span>
+    <button id="latBtn" title="글자마다 생성하는 데 걸린 시간을 글자 아래에 표시 (PNG 저장에도 들어감)">글자별 ms</button>
+    <button id="save">PNG 저장</button>
+    <button id="clear">지우기</button>
+    <button id="full" title="입력창·종이만 크게">발표 화면</button>
+    <button id="flowBtn" title="키를 칠 때마다 뒤에서 일어나는 과정을 새 창으로 (다른 화면에 띄우기 좋음)">과정 창 열기 ↗</button>
+  </div>
+  <div id="err" class="err hide"></div>
+  <div id="sheets"></div>
+  <div class="foot">
+    키를 누를 때마다 새로 생긴 글자만 생성하고, 이미 쓴 글자는 다시 만들지 않습니다.
+    한글은 음절이 완성되는 순간 생성하며, 조합 중인 낱자는 흐리게 보입니다. 점선 상자는 모델이 지원하지 않는 글자입니다.
+    같은 시드에서는 필체만 바꿔도 노이즈가 같아 '같은 손놀림, 다른 필체' 로 비교할 수 있습니다.
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const INKS = [["#1b2a4a", "남색 볼펜"], ["#1d1c1a", "검정"], ["#2a5bd7", "파랑"], ["#c0392b", "빨강"], ["#5b5b5b", "연필"]];
+const GAP = 3, SPACE = 22;                       // sample.compose_line 과 같은 간격 (64px 기준)
+const S = { styles: [], untrained: [], distilled: true, style: 0, seed: 0, steps: 10, w: 1.5, ink: INKS[0][0], size: 1.5, multi: false, lat: false };
+const cache = new Map();                         // key → {png, l, r, url}
+let rows = [], recent = [];
+
+function lh() { return Math.round(64 * S.size * 1.18 + (S.lat ? 10.5 * S.size : 0)); }
+function applySize() {
+  document.documentElement.style.setProperty("--s", S.size);
+  document.documentElement.style.setProperty("--lh", lh() + "px");
+  document.documentElement.style.setProperty("--ink", S.ink);
+}
+
+// ---------------------------------------------------------------- 행(필체) 구성
+// 학습한 필체끼리, 학습 안 된 필체끼리 따로 돕니다. 학습 안 된 필체에서 '필체 4개 나란히' 를 누르면
+// 학습 안 된 필체 4개가 나란히 나와서, 이름은 달라도 거의 같은 글씨라는 것을 눈으로 확인할 수 있습니다.
+const isUntrained = (i) => S.untrained.includes(i);
+function pool(st) {
+  const all = S.styles.map((_, i) => i);
+  const p = all.filter((i) => isUntrained(i) === isUntrained(st));
+  return p.length ? p : all;
+}
+function rowStyles() {
+  if (!S.multi) return [S.style];
+  const p = pool(S.style), at = p.indexOf(S.style), n = p.length, out = [S.style];
+  for (let i = 1; out.length < Math.min(4, n); i++) out.push(p[(at + i * Math.max(1, Math.floor(n / 4))) % n]);
+  return [...new Set(out)];
+}
+function styleLabel(i) { return (S.styles[i] || "") + (isUntrained(i) ? "  (학습 안 됨)" : ""); }
+function buildRows() {
+  const box = $("sheets"); box.innerHTML = "";
+  rows = rowStyles().map((st) => {
+    const el = document.createElement("div"); el.className = "sheet";
+    el.innerHTML = `<div class="who"></div><div class="text"></div>`;
+    el.querySelector(".who").textContent = styleLabel(st);
+    box.appendChild(el);
+    return { style: st, el, text: el.querySelector(".text"), shown: new Set(), inflight: false, pending: false };
+  });
+  rows.forEach(request);
+}
+
+// ---------------------------------------------------------------- 서버 요청 (행마다 최신 요청 하나만)
+async function request(row) {
+  if (row.inflight) { row.pending = true; return; }
+  row.inflight = true; row.pending = false; row.el.classList.add("busy");
+  const text = $("txt").value;
+  const chars = new Set(text);
+  const prefix = `${row.style}|${S.seed}|`;
+  const have = [...cache.keys()].filter((k) => k.startsWith(prefix) && chars.has(k.split("|")[4]));
+  try {
+    const r = await fetch("api/render", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, style: row.style, seed: S.seed, steps: S.steps, w: S.w, have,
+                             trace: row === rows[0], single: S.lat }) });   // 과정 창(/flow)이 열려 있으면 서버가 이 요청의 과정을 그쪽으로 보냄
+    if (!r.ok) throw new Error(`서버 응답 ${r.status}`);
+    const d = await r.json();
+    for (const [k, g] of Object.entries(d.glyphs)) cache.set(k, { ...g, url: `url(data:image/png;base64,${g.png})` });
+    row.items = d.items;
+    if (rows.includes(row)) draw(row, d.items);
+    if (d.new > 0) report(d);
+    $("err").classList.add("hide");
+  } catch (e) {
+    $("err").textContent = "생성 서버에 연결할 수 없습니다: " + e.message; $("err").classList.remove("hide");
+  } finally {
+    row.inflight = false; row.el.classList.remove("busy");
+    if (row.pending) request(row);
+  }
+}
+
+function report(d) {
+  recent.push(d.ms / d.new); recent = recent.slice(-30);
+  const med = [...recent].sort((a, b) => a - b)[Math.floor(recent.length / 2)];
+  $("ms").innerHTML = `${d.ms < 10 ? d.ms.toFixed(1) : Math.round(d.ms)}<small>ms</small>`;
+  $("msinfo").textContent = `방금 ${d.new}글자 생성 · 글자당 ${med < 10 ? med.toFixed(1) : Math.round(med)} ms (최근 중앙값) · 글자당 모델 ${d.forwards_per_char}번 실행`;
+}
+
+// ---------------------------------------------------------------- 그리기
+const fmtMs = (v) => (v < 10 ? v.toFixed(1) : Math.round(v)) + " ms";
+function glyphEl(key, g, isNew) {
+  const s = S.size, w = (g.r - g.l + 1 + 2 * GAP) * s;
+  const el = document.createElement("span"); el.className = "g" + (isNew ? " new" : ""); el.dataset.key = key;
+  el.style.width = w + "px";
+  el.style.webkitMaskImage = el.style.maskImage = g.url;
+  el.style.webkitMaskSize = el.style.maskSize = `${64 * s}px ${64 * s}px`;
+  el.style.webkitMaskPosition = el.style.maskPosition = `${(GAP - g.l) * s}px 0`;
+  // 글자 아래 생성 시간 ('글자별 ms' 켰을 때). 여러 글자를 한 배치로 만들었으면 배치 시간 ÷ 글자 수 (마우스를 올리면 내역)
+  const box = document.createElement("span"); box.className = "gw"; box.appendChild(el);
+  if (g.ms != null) {
+    const lat = document.createElement("span"); lat.className = "lat";
+    lat.textContent = fmtMs(g.ms);
+    box.title = g.n > 1 ? `${g.n}글자를 한 번에 생성: ${fmtMs(g.batch_ms)} ÷ ${g.n}` : `이 글자 생성: ${fmtMs(g.ms)}`;
+    box.appendChild(lat);
+  }
+  return box;
+}
+function draw(row, items) {
+  const frag = document.createDocumentFragment();
+  let word = null; const shown = new Set();
+  const newWord = () => { word = document.createElement("span"); word.className = "word"; frag.appendChild(word); };
+  let lastBr = true;                                   // 맨 앞의 줄바꿈은 빈 줄
+  items.forEach((it, i) => {
+    if (it.kind === "newline") {
+      word = null; const br = document.createElement("span"); br.className = lastBr ? "br blank" : "br";
+      frag.appendChild(br); lastBr = true; return;
+    }
+    lastBr = false;
+    if (it.kind === "space") {
+      word = null; const sp = document.createElement("span"); sp.className = "sp";
+      sp.style.width = SPACE * S.size + "px"; frag.appendChild(sp); return;
+    }
+    if (!word) newWord();
+    if (it.kind === "glyph" && cache.has(it.key)) {
+      word.appendChild(glyphEl(it.key, cache.get(it.key), !row.shown.has(it.key))); shown.add(it.key);
+    } else {
+      const el = document.createElement("span");
+      el.className = it.kind === "jamo" && i === items.length - 1 ? "j" : "u";
+      el.textContent = it.ch; el.title = it.kind === "unsupported" ? "지원하지 않는 글자" : "";
+      word.appendChild(el);
+    }
+  });
+  if (!word) newWord();
+  const caret = document.createElement("span"); caret.className = "caret"; word.appendChild(caret);
+  row.text.replaceChildren(frag); row.shown = shown;
+}
+
+// ---------------------------------------------------------------- PNG 저장 (보이는 대로, 2배 해상도)
+async function savePNG() {
+  const k = 2 * S.size, pad = 40, LAT = S.lat ? Math.round(18 * k / 1.5) : 0, LH = Math.round(64 * k * 1.18) + LAT;
+  const gw = (g) => (g.r - g.l + 1 + 2 * GAP) * k;
+  // 그림 너비: 엔터로 나눈 줄 중 가장 긴 줄이 한 줄에 들어가게 (1200~3600px). 그보다 길면 자동으로 접힘
+  let need = 0;
+  for (const row of rows) {
+    let wsum = 0;
+    for (const n of row.text.children) {
+      if (n.classList.contains("br")) { need = Math.max(need, wsum); wsum = 0; continue; }
+      if (n.classList.contains("sp")) { wsum += SPACE * k; continue; }
+      for (const c of n.querySelectorAll(".g")) if (cache.has(c.dataset.key)) wsum += gw(cache.get(c.dataset.key));
+    }
+    need = Math.max(need, wsum);
+  }
+  const W = Math.round(Math.min(3600, Math.max(1200, need + 2 * pad + 2)));
+  const lines = [];
+  for (const row of rows) {
+    const words = []; let cur = [];
+    for (const n of row.text.children) {
+      if (n.classList.contains("br")) { if (cur.length) words.push(cur); cur = []; words.push("br"); continue; }
+      if (n.classList.contains("sp")) { if (cur.length) words.push(cur); cur = []; words.push("sp"); }
+      else for (const c of n.querySelectorAll(".g")) if (cache.has(c.dataset.key)) cur.push(cache.get(c.dataset.key));
+    }
+    if (cur.length) words.push(cur);
+    let x = pad, line = [];
+    const rowLines = [line];
+    for (const wd of words) {
+      if (wd === "sp") { x += SPACE * k; continue; }
+      if (wd === "br") { line = []; rowLines.push(line); x = pad; continue; }
+      const gs = wd;
+      const ww = gs.reduce((a, g) => a + (g.r - g.l + 1 + 2 * GAP) * k, 0);
+      if (x + ww > W - pad && line.length) { line = []; rowLines.push(line); x = pad; }
+      for (const g of gs) { line.push([x, g]); x += (g.r - g.l + 1 + 2 * GAP) * k; }
+    }
+    lines.push(...rowLines, null);
+  }
+  if (lines.length && lines[lines.length - 1] === null) lines.pop();
+  const H = pad * 2 + lines.length * LH;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d"); ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+  const tile = document.createElement("canvas"); tile.width = tile.height = 64;
+  const tctx = tile.getContext("2d");
+  let y = pad;
+  for (const line of lines) {
+    if (line) for (const [x, g] of line) {
+      const img = new Image(); img.src = `data:image/png;base64,${g.png}`; await img.decode();
+      tctx.globalCompositeOperation = "source-over"; tctx.clearRect(0, 0, 64, 64); tctx.drawImage(img, 0, 0);
+      tctx.globalCompositeOperation = "source-in"; tctx.fillStyle = S.ink; tctx.fillRect(0, 0, 64, 64);
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(tile, g.l - GAP, 0, g.r - g.l + 1 + 2 * GAP, 64, x, y + LH - LAT - 64 * k, (g.r - g.l + 1 + 2 * GAP) * k, 64 * k);
+      if (LAT && g.ms != null) {                       // '글자별 ms' 켰으면 그림에도 글자 아래 시간
+        ctx.font = `500 ${Math.round(11 * k / 1.5)}px ui-monospace, Menlo, monospace`; ctx.fillStyle = "#8b8676";
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
+        ctx.fillText(fmtMs(g.ms), x + (g.r - g.l + 1 + 2 * GAP) * k / 2, y + LH - LAT + 3 * k / 1.5);
+      }
+    }
+    y += LH;
+  }
+  const a = document.createElement("a"); a.download = `손글씨_필체${rows.map((r) => r.style).join("-")}_시드${S.seed}.png`;
+  a.href = cv.toDataURL("image/png"); a.click();
+}
+
+// ---------------------------------------------------------------- 이벤트
+function refresh() { rows.forEach(request); }
+function setStyle(i) { S.style = (i + S.styles.length) % S.styles.length; $("style").value = S.style; buildRows(); }
+function stepStyle(k) {                   // '다른 필체': 지금 필체와 같은 무리(학습됨 / 학습 안 됨) 안에서 다음으로
+  const p = pool(S.style), at = p.indexOf(S.style);
+  setStyle(p[((at + k) % p.length + p.length) % p.length]);
+}
+
+async function init() {
+  applySize();
+  INKS.forEach(([c, name], i) => {
+    const b = document.createElement("button"); b.className = "sw" + (i ? "" : " on"); b.style.background = c; b.title = name;
+    b.onclick = () => { S.ink = c; applySize(); document.querySelectorAll(".sw").forEach((x) => x.classList.toggle("on", x === b)); };
+    $("inks").appendChild(b);
+  });
+  try {
+    const info = await (await fetch("api/info")).json();
+    Object.assign(S, { styles: info.styles, untrained: info.untrained || [], distilled: info.distilled, style: info.default_style });
+    const opt = (i) => `<option value="${i}">${styleLabel(i).replace(/</g, "&lt;")}</option>`;
+    const all = info.styles.map((_, i) => i), tr = all.filter((i) => !isUntrained(i)), un = all.filter(isUntrained);
+    $("style").innerHTML = un.length
+      ? `<optgroup label="학습한 필체 ${tr.length}개">${tr.map(opt).join("")}</optgroup>`
+        + `<optgroup label="학습 안 된 필체 ${un.length}개 (검증·테스트용 폰트 · 모두 비슷하게 나옴)">${un.map(opt).join("")}</optgroup>`
+      : all.map(opt).join("");
+    $("style").value = S.style;
+    $("mchip").textContent = info.distilled ? `증류 ${info.steps}스텝 모델` + (info.w_baked != null ? ` · w ${info.w_baked} 내장` : "") : "증류 전 모델";
+    $("dchip").textContent = `${info.device}${info.device_name ? " · " + info.device_name : ""}`;
+    document.querySelectorAll(".cfg").forEach((e) => e.classList.toggle("hide", info.distilled));
+  } catch (e) {
+    $("err").textContent = "생성 서버에 연결할 수 없습니다. live_demo.py 가 실행 중인지 확인하세요."; $("err").classList.remove("hide"); return;
+  }
+  $("txt").addEventListener("input", refresh);
+  $("style").onchange = (e) => setStyle(+e.target.value);
+  $("nextStyle").onclick = () => stepStyle(S.multi ? rows.length : 1);
+  $("reseed").onclick = () => { S.seed += 1; refresh(); };
+  $("multi").onclick = (e) => { S.multi = !S.multi; e.target.classList.toggle("on", S.multi); buildRows(); };
+  $("size").oninput = (e) => { S.size = +e.target.value; applySize(); buildRows(); };
+  $("steps").onchange = (e) => { S.steps = Math.max(1, +e.target.value || 1); refresh(); };
+  $("w").onchange = (e) => { S.w = Math.max(0, +e.target.value || 0); refresh(); };
+  $("save").onclick = savePNG;
+  $("latBtn").onclick = (e) => {
+    S.lat = !S.lat; e.target.classList.toggle("on", S.lat); document.body.classList.toggle("showlat", S.lat);
+    applySize(); rows.forEach((r) => r.items && draw(r, r.items));
+    if (S.lat) refresh();                    // 배치로 만들어 둔 글자를 한 글자씩 다시 재기
+  };
+  $("flowBtn").onclick = () => window.open("flow", "handwriting-flow", "width=1320,height=680");
+  $("clear").onclick = () => { $("txt").value = ""; refresh(); $("txt").focus(); };
+  $("full").onclick = (e) => { document.body.classList.toggle("full"); e.target.classList.toggle("on");
+    if (document.body.classList.contains("full")) document.documentElement.requestFullscreen?.().catch(() => {});
+    else if (document.fullscreenElement) document.exitFullscreen(); };
+  document.addEventListener("keydown", (e) => {
+    if (!e.altKey) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); $("nextStyle").click(); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); setStyle(S.style - 1); }
+    if (e.key === "ArrowDown") { e.preventDefault(); $("reseed").click(); }
+  });
+  buildRows();
+  const t = $("txt"); t.focus(); t.setSelectionRange(t.value.length, t.value.length);
+}
+init();
+</script>
+</body>
+</html>

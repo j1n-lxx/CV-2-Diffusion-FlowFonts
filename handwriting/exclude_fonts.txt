@@ -1,0 +1,64 @@
+# 사전학습 세트(font_ko_pretrain)에서 '학습에' 쓰지 않을 폰트. train.py·classifier.py 가 기본으로 읽습니다.
+# 형식: font_id <TAB> 폰트 <TAB> split <TAB> 이유.   끄려면 --exclude_file none
+# pixel/perforated/outline/decorative/heavy: 손글씨 학습에 방해되는 모양 (통계로 후보를 뽑고 눈으로 확인)
+# leak: 고정판과 가변(Variable)판이 다른 패밀리로 취급돼 같은 그림이 train 과 val/test 에 나뉜 경우 → train 쪽 제외
+# duplicate: train 안의 완전 중복
+12	BM Euljiro oraeorae Regular	train	decorative: 입체·그림자 장식
+33	ChangwonDangamAsac Bold	train	heavy: 획 사이가 막힐 정도로 굵음
+34	Climate Crisis KR 1979	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+42	Climate Crisis KR VF 2050	val	decorative: 녹아내린 글자
+49	DNF Bit Bit TTF Regular	train	pixel: 64px에서 계단 모양
+61	Galmuri11 Bold	train	pixel: 64px에서 계단 모양
+62	Galmuri11 Condensed	train	pixel: 64px에서 계단 모양
+63	Galmuri11 Regular	train	pixel: 64px에서 계단 모양
+64	Galmuri14 Regular	train	pixel: 64px에서 계단 모양
+65	Galmuri9 Regular	val	pixel: 64px에서 계단 모양
+66	GalmuriMono11 Regular	train	pixel: 64px에서 계단 모양
+67	GalmuriMono9 Regular	train	pixel: 64px에서 계단 모양
+69	Gasoek One Regular	train	heavy: 획 사이가 막힐 정도로 굵음
+120	Hakgyoansim Moheomga B	train	outline: 이중선
+121	Hakgyoansim Moheomga R	train	outline: 이중선
+157	JennySans Variable Black	train	duplicate: train 안에 같은 그림이 이미 있음
+158	JennySans Variable Bold	train	duplicate: train 안에 같은 그림이 이미 있음
+159	JennySans Variable ExtraBold	train	duplicate: train 안에 같은 그림이 이미 있음
+160	JennySans Variable ExtraLight	train	duplicate: train 안에 같은 그림이 이미 있음
+161	JennySans Variable Light	train	duplicate: train 안에 같은 그림이 이미 있음
+162	JennySans Variable Medium	train	duplicate: train 안에 같은 그림이 이미 있음
+163	JennySans Variable Regular	train	duplicate: train 안에 같은 그림이 이미 있음
+164	JennySans Variable SemiBold	train	duplicate: train 안에 같은 그림이 이미 있음
+165	JennySans Variable Thin	train	duplicate: train 안에 같은 그림이 이미 있음
+175	LINESeedSansKR-Thin Thin	train	duplicate: train 안에 같은 그림이 이미 있음
+182	Moirai One Regular	val	outline: 윤곽선 거품 글자
+197	NanumGothic Eco Bold	train	perforated: 잉크 절약용 구멍 뚫린 획
+198	NanumGothic Eco ExtraBold	train	perforated: 잉크 절약용 구멍 뚫린 획
+199	NanumGothic Eco Regular	train	perforated: 잉크 절약용 구멍 뚫린 획
+204	NanumMyeongjo Eco Bold	train	perforated: 잉크 절약용 구멍 뚫린 획
+205	NanumMyeongjo Eco ExtraBold	train	perforated: 잉크 절약용 구멍 뚫린 획
+206	NanumMyeongjo Eco Regular	train	perforated: 잉크 절약용 구멍 뚫린 획
+222	NeoDunggeunmo Regular	train	pixel: 64px에서 계단 모양
+223	NeoDunggeunmo Code Regular	test	pixel: 64px에서 계단 모양
+243	Pretendard Black	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+244	Pretendard Bold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+245	Pretendard ExtraBold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+246	Pretendard ExtraLight	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+247	Pretendard Light	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+248	Pretendard Medium	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+249	Pretendard Regular	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+250	Pretendard SemiBold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+251	Pretendard Thin	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+275	SUIT Heavy	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+276	SUIT Bold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+277	SUIT ExtraBold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+278	SUIT ExtraLight	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+279	SUIT Light	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+280	SUIT Medium	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+281	SUIT Regular	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+282	SUIT SemiBold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+283	SUIT Thin	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+303	Wanted Sans Variable Black	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+304	Wanted Sans Variable Bold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+305	Wanted Sans Variable ExtraBlack	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+306	Wanted Sans Variable ExtraBold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+307	Wanted Sans Variable Medium	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+308	Wanted Sans Variable Regular	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)
+309	Wanted Sans Variable SemiBold	train	leak: 같은 그림이 val/test 에 있음 (고정판·가변판)

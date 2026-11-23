@@ -1,0 +1,11 @@
+torch>=2.0
+numpy>=1.24
+pillow>=9.0
+gradio>=4.0          # demo.py, dashboard.py (fastapi·uvicorn 도 같이 설치됨 → live_demo.py)
+altair>=5.0          # dashboard.py 차트
+pandas>=1.5
+# 평가 CLIPScore (없으면 그 지표만 건너뜀, 첫 실행 때 CLIP 가중치를 Hugging Face 에서 받음)
+# open_clip_torch transformers   ← torch 버전을 고정해서 설치 (README Setup), 안 그러면 torch 가 새 버전으로 바뀜
+# 선택: eval.py --extra 의 LPIPS·Inception FID
+# lpips
+# pytorch-fid
