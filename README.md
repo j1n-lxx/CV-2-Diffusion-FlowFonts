@@ -1,7 +1,7 @@
 # CV-2-Diffusion-FlowFonts
 FlowFont generates Korean handwriting glyph by glyph in real time. A rectified-flow U-Net conditioned on jamo and writer style is pretrained on open fonts, fine-tuned on Nanum Handwriting, then reflowed and distilled to one network evaluation. On held-out syllables it keeps 97.6% jamo accuracy with 128× fewer evaluations than 64-step diffusion.
 
-![architecture](assets/architecture.png)
+![FlowFont teaser: one-step glyphs appear as each character is typed (about 25 ms per glyph), and repeated words such as 그린 and 기린 come out similar yet distinct](assets/teaser.jpg)
 
 <p align="center"><img src="assets/demo.gif" width="600"></p>
 
@@ -65,5 +65,6 @@ python3 -I assemble_v2.py ft  $W/ft_faces     $W/build_v2/font_ko_finetune_nanum
 |---|---|
 | `handwriting/` | model, training (`train.py`, `reflow.py`, `distill.py`), sampling, evaluation, demos |
 | `dataset_tools/` | dataset construction and license checks |
+| `docs/` | project presentation (`FlowFonts_Presentation.pptx`) |
 
 All fonts are SIL OFL 1.1; per-font provenance ships with the dataset.
