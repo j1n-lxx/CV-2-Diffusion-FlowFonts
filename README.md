@@ -3,6 +3,8 @@ FlowFont generates Korean handwriting glyph by glyph in real time. A rectified-f
 
 ![FlowFont teaser: one-step glyphs appear as each character is typed (about 25 ms per glyph), and repeated words such as 그린 and 기린 come out similar yet distinct](assets/teaser.jpg)
 
+📄 Paper: [FlowFonts.pdf](docs/FlowFonts.pdf) · Slides: [FlowFonts_Presentation.pptx](docs/FlowFonts_Presentation.pptx)
+
 <p align="center"><img src="assets/demo.gif" width="600"></p>
 
 ## Setup
@@ -65,6 +67,6 @@ python3 -I assemble_v2.py ft  $W/ft_faces     $W/build_v2/font_ko_finetune_nanum
 |---|---|
 | `handwriting/` | model, training (`train.py`, `reflow.py`, `distill.py`), sampling, evaluation, demos |
 | `dataset_tools/` | dataset construction and license checks |
-| `docs/` | project presentation (`FlowFonts_Presentation.pptx`) |
+| `docs/` | paper (`FlowFonts.pdf`) and presentation (`FlowFonts_Presentation.pptx`) |
 
 All fonts are SIL OFL 1.1; per-font provenance ships with the dataset.
